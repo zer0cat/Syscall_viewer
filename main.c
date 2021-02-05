@@ -18,7 +18,7 @@
 static INT_PTR CALLBACK MainDlgProc(HWND, UINT, WPARAM, LPARAM);
 LPBYTE OpenPEFileW(LPCWSTR);
 void ClosePEFile(LPBYTE);
-int ParseFromMem(HWND);
+int ParseFromMem(LPCSTR,HWND);
 int ParseFromDisk(LPWSTR,HWND);
 DWORD Rva2Raw(LPVOID, DWORD_PTR);
 void Err(char *);
@@ -82,6 +82,7 @@ HWND hList = GetDlgItem(hwndDlg,IDLIST1);
 OPENFILENAMEW OpenFileName;
 static WCHAR lpstrFile[MAX_PATH] = L"";
 LPVOID mem;
+UINT sys_num = 0;
 
     switch (uMsg)
     {
@@ -108,7 +109,7 @@ LPVOID mem;
 
 				case IDPMEM: //parse from memory
 					SendMessage(hList, LB_RESETCONTENT, 0, 0);
-					ParseFromMem(hList);
+					ParseFromMem(NULL,hList);
 					break;
 
 
@@ -135,11 +136,12 @@ LPVOID mem;
 					break;
 
 				case IDFTEST:
-					mem = VirtualAlloc(NULL,4096,MEM_RESERVE | MEM_COMMIT,PAGE_READONLY);
+					sys_num = ParseFromMem("NtCreateFile",hList);
+					//mem = VirtualAlloc(NULL,4096,MEM_RESERVE | MEM_COMMIT,PAGE_READONLY);
 					if(isWoW)
-						Syscall48((int)mem,0x50);
+						Syscall48((int)mem,sys_num);
 					else
-						Syscall32((int)mem,0x89);
+						Syscall32((int)mem,sys_num);
                 	break;
 
                 case IDEXIT:
@@ -189,7 +191,7 @@ void ClosePEFile(LPBYTE pBase)
     UnmapViewOfFile(pBase);
 }
 
-int ParseFromMem(HWND hList)
+int ParseFromMem(LPCSTR lpApiName,HWND hList)
 {
 LPBYTE PE = NULL;
 IMAGE_DOS_HEADER* pDosHeader;
@@ -214,7 +216,7 @@ functions = (PDWORD)(PE + pIED->AddressOfFunctions);
 ordinals = (PWORD)(PE + pIED->AddressOfNameOrdinals);
 names = (PDWORD)(PE + pIED->AddressOfNames);
 
-for (int i = 0; i < pIED->NumberOfNames; i++)
+for (unsigned long int i = 0; i < pIED->NumberOfNames; i++)
     {
 	name = (char*)PE + names[i];
 
@@ -231,6 +233,13 @@ for (int i = 0; i < pIED->NumberOfNames; i++)
 			{
 			continue;
 			}
+
+	if(lpApiName != NULL)
+		{
+		if(lstrcmpA(lpApiName,name) == 0)
+				return (int)MAKEWORD(*(PE + fnVa+ 1),*(PE + fnVa+ 2));
+		}
+
 	wsprintfA(list2,"%x %s = 0x%hx",fnVa,name,MAKEWORD(*(PE + fnVa+ 1),*(PE + fnVa+ 2)));
 	SendMessageA(hList,LB_ADDSTRING ,0,(LPARAM)list2);
 	}	
@@ -317,8 +326,6 @@ for (int i = 0; i < pIED->NumberOfNames; i++)
 			{
 			continue;
 			}
-	//printf("%x %s = ",dwRVA,name);
-	//printf("0x%hx\n",MAKEWORD(*(PE + nSys+ 1),*(PE + nSys+ 2)));
 	
     wsprintfA(list2,"%x %s = 0x%hx",dwRVA,name,MAKEWORD(*(PE + nSys+ 1),*(PE + nSys+ 2)));
 	SendMessageA(hList,LB_ADDSTRING ,0,(LPARAM)list2);

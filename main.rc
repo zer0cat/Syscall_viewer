@@ -14,7 +14,7 @@ CLASS "SysCallVClass"
 FONT 8, "MS Shell Dlg", 0, 0, 1
 {
   CONTROL "Parse from sysdir", IDPSYS, "Button", WS_TABSTOP, 12, 288, 72, 15
-  CONTROL "CreateFile test", IDFTEST, "Button", WS_DISABLED|WS_TABSTOP, 12, 316, 84, 14
+  CONTROL "CreateFile test", IDFTEST, "Button", WS_TABSTOP, 12, 316, 84, 14
   CONTROL "Exit", IDEXIT, "Button", WS_TABSTOP, 224, 316, 88, 14
   CONTROL "", IDLIST1, "ListBox", LBS_SORT|LBS_NOTIFY|WS_VSCROLL|WS_BORDER|WS_TABSTOP, 8, 4, 304, 272
   CONTROL "Parse from memory", IDPMEM, "Button", WS_TABSTOP, 88, 288, 88, 14
